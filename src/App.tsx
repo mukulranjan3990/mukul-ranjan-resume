@@ -25,7 +25,8 @@ import {
   X,
   Send,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Home
 } from 'lucide-react';
 import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
@@ -623,6 +624,14 @@ export default function App() {
             <span className="font-display font-bold text-zinc-100 hidden sm:block">Mukul Ranjan</span>
           </div>
           <div className="flex items-center gap-6">
+            <a 
+              href="https://mukulranjan3990.github.io/mukul-ranjan-portfolio/"
+              className="flex items-center gap-2 px-4 py-2 bg-zinc-800/50 hover:bg-zinc-800 text-zinc-300 hover:text-white rounded-xl text-sm font-bold transition-all border border-zinc-700/50 hover:border-brand/40 group"
+            >
+              <Home size={16} className="group-hover:scale-110 transition-transform" />
+              <span className="hidden md:inline">Portfolio</span>
+            </a>
+            <div className="h-4 w-[1px] bg-zinc-800 mx-1 hidden md:block" />
             <button 
               onClick={() => {
                 navigator.clipboard.writeText(resumeData.personal.email);
