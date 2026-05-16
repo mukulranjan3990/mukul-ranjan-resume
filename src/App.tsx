@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { GoogleGenAI, Type } from "@google/genai";
 import { 
   Github, 
   Linkedin, 
@@ -223,16 +224,73 @@ const AIAssistant = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
     setIsAnalyzing(true);
     setError(null);
     try {
+      // 1. Try server-side API first
       const resp = await fetch('/api/resume/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ jobDescription: jd })
       });
-      const data = await resp.json();
-      if (data.error) throw new Error(data.error);
-      setResult(data);
+
+      if (resp.ok) {
+        const data = await resp.json();
+        if (data.error) throw new Error(data.error);
+        setResult(data);
+        return;
+      }
+
+      // 2. Fallback for Static Sites (GitHub Pages)
+      const clientSideKey = (import.meta.env.VITE_GEMINI_API_KEY as string);
+      
+      if (!clientSideKey) {
+        if (window.location.hostname.includes('github.io')) {
+          throw new Error("AI analysis requires a Gemini API Key. Since you are on GitHub Pages, please add 'VITE_GEMINI_API_KEY' to your Repository Secrets (Settings > Secrets and variables > Actions) so the AI can work.");
+        }
+        throw new Error("Match analysis failed. If you're on a static host, please provide a VITE_GEMINI_API_KEY.");
+      }
+
+      // Initialize Gemini Client-Side (Fallback)
+      const genAI = new GoogleGenAI({ apiKey: clientSideKey });
+      const model = "gemini-3-flash-preview";
+      
+      const prompt = `
+        You are an expert recruiter for top tech companies. 
+        Analyze the provided job description and Mukul Ranjan's resume data.
+        Provide a match report including:
+        1. Overall match score (percentage).
+        2. Key matching skills.
+        3. Missing keywords or areas for improvement.
+        4. A short "Elevator Pitch" for Mukul specifically for this role.
+
+        Mukul's Resume Data:
+        ${JSON.stringify(resumeData)}
+
+        Job Description:
+        ${jd}
+      `;
+
+      const genResp = await genAI.models.generateContent({
+        model,
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              score: { type: Type.NUMBER },
+              matches: { type: Type.ARRAY, items: { type: Type.STRING } },
+              gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+              pitch: { type: Type.STRING }
+            },
+            required: ["score", "matches", "gaps", "pitch"]
+          }
+        }
+      });
+
+      const parsed = JSON.parse(genResp.text || '{}');
+      setResult(parsed);
+
     } catch (err: any) {
-      setError(err.message);
+      setError(err.message || "An unexpected error occurred during analysis.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -390,22 +448,21 @@ const AIAssistant = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
 };
 
 const ResumeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => {
-  if (!isOpen) return null;
-
   return (
     <AnimatePresence>
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 sm:p-8"
-      >
+      {isOpen && (
         <motion.div
-          initial={{ scale: 0.95, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.95, opacity: 0 }}
-          className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 bg-black/80 backdrop-blur-md z-[100] flex items-center justify-center p-4 sm:p-8"
         >
+          <motion.div
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            className="bg-white w-full max-w-4xl max-h-[90vh] rounded-2xl overflow-hidden shadow-2xl flex flex-col"
+          >
           {/* Header Actions */}
           <div className="bg-zinc-100 px-6 py-4 border-b border-zinc-200 flex justify-between items-center no-print">
             <div className="flex items-center gap-2">
@@ -519,7 +576,8 @@ const ResumeModal = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void
           </div>
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    )}
+  </AnimatePresence>
   );
 };
 
@@ -611,10 +669,26 @@ export default function App() {
             <p className="text-zinc-400 text-lg max-w-xl mb-8 leading-relaxed">
               {resumeData.summary}
             </p>
-            <div className="flex flex-wrap gap-4 text-zinc-500 font-mono text-xs">
+            <div className="flex flex-wrap gap-4 text-zinc-500 font-mono text-xs mb-8">
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg"><MapPin size={12} className="text-brand" /> {resumeData.personal.location}</div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg"><Phone size={12} className="text-brand" /> {resumeData.personal.phone}</div>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-zinc-900 border border-zinc-800 rounded-lg"><Terminal size={12} className="text-brand" /> 2027_BTECH_CSE</div>
+            </div>
+            <div className="flex flex-wrap gap-4">
+              <button 
+                onClick={() => setIsResumeOpen(true)}
+                className="inline-flex items-center gap-2 bg-brand hover:bg-brand-dark text-white px-8 py-4 rounded-xl font-bold transition-all shadow-xl shadow-brand/20 active:scale-95"
+              >
+                <Download size={18} />
+                Explore Resume
+              </button>
+              <a 
+                href={`mailto:${resumeData.personal.email}`}
+                className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 hover:border-brand/30 text-zinc-300 px-8 py-4 rounded-xl font-bold transition-all active:scale-95"
+              >
+                <Mail size={18} />
+                Get in Touch
+              </a>
             </div>
           </motion.div>
 
