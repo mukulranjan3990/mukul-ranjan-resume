@@ -1,0 +1,66 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  --font-display: "Space Grotesk", sans-serif;
+  
+  --color-brand: #0ea5e9;
+  --color-brand-light: #7dd3fc;
+  --color-brand-dark: #0284c7;
+}
+
+@layer base {
+  body {
+    @apply bg-zinc-950 text-zinc-300 antialiased selection:bg-brand/30 selection:text-white;
+  }
+
+  h1, h2, h3, h4 {
+    @apply font-display text-zinc-100 font-bold tracking-tight;
+  }
+}
+
+.glass-card {
+  @apply bg-zinc-900/50 border border-zinc-800/50 backdrop-blur-xl rounded-2xl p-6 shadow-2xl;
+}
+
+.terminal-window {
+  @apply bg-black/80 border border-zinc-800 rounded-lg overflow-hidden font-mono text-sm;
+}
+
+.skill-tag {
+  @apply px-3 py-1 bg-zinc-900 border border-zinc-800 rounded-full text-xs font-medium text-zinc-400 hover:border-brand/50 hover:text-brand transition-all cursor-default;
+}
+
+@media print {
+  nav, button, .AIAssistant-trigger, .terminal-window, footer, .pointer-events-none {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  
+  .glass-card {
+    background: white !important;
+    border: 1px solid #eee !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  
+  .max-w-7xl {
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  
+  h1, h2, h3, h4 {
+    color: black !important;
+  }
+  
+  p, span, li {
+    color: #444 !important;
+  }
+}
