@@ -613,6 +613,28 @@ export default function App() {
         <span className="hidden sm:inline">Shortlist Matcher</span>
       </motion.button>
 
+      {/* Sticky Bottom-Left Link */}
+      <motion.a
+        href="https://mukulranjan3990.github.io/mukul-ranjan-portfolio/"
+        target="_blank"
+        rel="noopener noreferrer"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+        className="fixed bottom-6 left-6 z-[60] flex items-center bg-[#020617] border border-zinc-800/50 p-1 rounded-sm transition-all group shadow-2xl no-print"
+      >
+        <div className="flex items-center gap-3 pr-4">
+          <div className="w-10 h-10 bg-zinc-900/50 flex items-center justify-center m-1">
+            <Download size={18} className="text-brand group-hover:scale-110 transition-transform" />
+          </div>
+          <div className="flex flex-col text-left">
+            <span className="text-[12px] font-black uppercase tracking-widest text-white leading-tight">Full Portfolio</span>
+            <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-tighter">Software Engineer</span>
+          </div>
+        </div>
+      </motion.a>
+
       <AIAssistant isOpen={isAIOpen} onClose={() => setIsAIOpen(false)} />
       <ResumeModal isOpen={isResumeOpen} onClose={() => setIsResumeOpen(false)} />
 
